@@ -10,7 +10,7 @@ It's an new design for [TDengine] rust client based on C interface or the REST A
 
 if you use the default features, it'll depend on:
 
-- [Tdengine] Client library and headers.
+- [TDengine] Client library and headers.
 - clang because bindgen will requires the clang AST library.
 
 ## Fetures
@@ -110,7 +110,7 @@ Welcome for all contributions.
 
 ## License
 
-Keep same with [Tdengine](https://www.taosdata.com/en/getting-started/).
+Keep same with [TDengine].
 
 [TDengine]: https://www.taosdata.com/en/getting-started/
 [r2d2]: https://crates.io/crates/r2d2
