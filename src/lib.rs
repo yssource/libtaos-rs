@@ -27,6 +27,8 @@ pub use error::*;
 
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("cannot get TDengine connection")]
+    ConnectionInvalid,
     #[error("taos error: {0}")]
     RawTaosError(#[from] TaosError),
     #[cfg(feature = "rest")]

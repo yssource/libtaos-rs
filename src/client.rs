@@ -143,11 +143,7 @@ impl Taos {
             )
             .null_or();
             match conn {
-                None => {
-                    let null: *const c_void = std::ptr::null();
-                    let _ = null.taos_error_or();
-                    unreachable!()
-                }
+                None => Err(Error::ConnectionInvalid),
                 Some(conn) => Ok(Taos { conn }),
             }
         }
