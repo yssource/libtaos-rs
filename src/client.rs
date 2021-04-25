@@ -288,117 +288,34 @@ impl CTaosResult {
                 .into_iter()
                 .zip(fields.iter())
                 .map(|(ptr, meta)| unsafe {
-                    dbg!(meta);
-                    dbg!(ptr);
+                    if ptr.is_null() {
+                        return Field::Null;
+                    }
                     //let ptr = taos_row.offset(i as _);
                     match meta.type_ {
                         TaosDataType::Null => Field::Null,
-                        TaosDataType::Bool => {
-                            if ptr.is_null() {
-                                Field::Null
-                            } else {
-                                Field::Bool(*(*ptr as *mut i8) != 0)
-                            }
-                        }
-                        TaosDataType::TinyInt => {
-                            if ptr.is_null() {
-                                Field::Null
-                            } else {
-                                Field::TinyInt(*(*ptr as *mut i8))
-                            }
-                        }
-                        TaosDataType::SmallInt => {
-                            if ptr.is_null() {
-                                Field::Null
-                            } else {
-                                Field::SmallInt(*(*ptr as *mut i16))
-                            }
-                        }
-                        TaosDataType::Int => {
-                            if ptr.is_null() {
-                                Field::Null
-                            } else {
-                                Field::Int(*(*ptr as *mut i32))
-                            }
-                        }
-                        TaosDataType::BigInt => {
-                            if ptr.is_null() {
-                                Field::Null
-                            } else {
-                                Field::BigInt(*(*ptr as *mut i64))
-                            }
-                        }
-                        TaosDataType::UTinyInt => {
-                            if ptr.is_null() {
-                                Field::Null
-                            } else {
-                                Field::UTinyInt(*(*ptr as *mut u8))
-                            }
-                        }
-                        TaosDataType::USmallInt => {
-                            if ptr.is_null() {
-                                Field::Null
-                            } else {
-                                Field::USmallInt(*(*ptr as *mut u16))
-                            }
-                        }
-                        TaosDataType::UInt => {
-                            if ptr.is_null() {
-                                Field::Null
-                            } else {
-                                Field::UInt(*(*ptr as *mut u32))
-                            }
-                        }
-                        TaosDataType::UBigInt => {
-                            if ptr.is_null() {
-                                Field::Null
-                            } else {
-                                Field::UBigInt(*(*ptr as *mut u64))
-                            }
-                        }
-                        TaosDataType::Timestamp => {
-                            if ptr.is_null() {
-                                Field::Null
-                            } else {
-                                Field::Timestamp(*(*ptr as *mut i64))
-                            }
-                        }
-                        TaosDataType::Float => {
-                            if ptr.is_null() {
-                                Field::Null
-                            } else {
-                                Field::Float(*(*ptr as *mut f32))
-                            }
-                        }
-                        TaosDataType::Double => {
-                            if ptr.is_null() {
-                                Field::Null
-                            } else {
-                                Field::Double(*(*ptr as *mut f64))
-                            }
-                        }
-                        TaosDataType::Binary => {
-                            if ptr.is_null() {
-                                Field::Null
-                            } else {
-                                Field::Binary(
-                                    CStr::from_ptr((*ptr) as *const c_char)
-                                        .to_string_lossy()
-                                        .into_owned(),
-                                )
-                            }
-                        }
-                        TaosDataType::NChar => {
-                            if ptr.is_null() {
-                                Field::Null
-                            } else {
-                                Field::NChar(
-                                    CStr::from_ptr((*ptr) as *const c_char)
-                                        .to_string_lossy()
-                                        .into_owned(),
-                                )
-                            }
-                        }
+                        TaosDataType::Bool => Field::Bool(*(*ptr as *mut i8) != 0),
+                        TaosDataType::TinyInt => Field::TinyInt(*(*ptr as *mut i8)),
+                        TaosDataType::SmallInt => Field::SmallInt(*(*ptr as *mut i16)),
+                        TaosDataType::Int => Field::Int(*(*ptr as *mut i32)),
+                        TaosDataType::BigInt => Field::BigInt(*(*ptr as *mut i64)),
+                        TaosDataType::UTinyInt => Field::UTinyInt(*(*ptr as *mut u8)),
+                        TaosDataType::USmallInt => Field::USmallInt(*(*ptr as *mut u16)),
+                        TaosDataType::UInt => Field::UInt(*(*ptr as *mut u32)),
+                        TaosDataType::UBigInt => Field::UBigInt(*(*ptr as *mut u64)),
+                        TaosDataType::Timestamp => Field::Timestamp(*(*ptr as *mut i64)),
+                        TaosDataType::Float => Field::Float(*(*ptr as *mut f32)),
+                        TaosDataType::Double => Field::Double(*(*ptr as *mut f64)),
+                        TaosDataType::Binary => Field::Binary(
+                            CStr::from_ptr((*ptr) as *const c_char)
+                                .to_string_lossy()
+                                .into_owned(),
+                        ),
+                        TaosDataType::NChar => Field::NChar(
+                            CStr::from_ptr((*ptr) as *const c_char)
+                                .to_string_lossy()
+                                .into_owned(),
+                        ),
                         _ => {
                             unreachable!("unexpected data type, please contract the author to fix!")
                         }
