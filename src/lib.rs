@@ -99,6 +99,6 @@ impl r2d2::ManageConnection for TaosCfg {
     }
 
     fn has_broken(&self, _: &mut Self::Connection) -> bool {
-        true
+        false
     }
 }
