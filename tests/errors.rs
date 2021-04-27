@@ -15,7 +15,7 @@ async fn invalid_database_name() -> () {
     match err {
         Error::RawTaosError(TaosError { code, err }) => {
             println!("{}", err);
-            assert_eq!(code, TaosCode::MnodeDbNotSelected);
+            assert_eq!(code, TaosCode::MndDbNotSelected);
         }
         _ => {
             unreachable!();
@@ -35,7 +35,7 @@ async fn invalid_table_name() -> () {
     match err {
         Error::RawTaosError(TaosError { code, err }) => {
             println!("{}", err);
-            assert_eq!(code, TaosCode::MnodeInvalidTableName);
+            assert!(code.mnd_invalid_table_name());
         }
         _ => {
             unreachable!();

@@ -14,7 +14,7 @@ async fn describe_non_exist_table() -> () {
     match err {
         Error::RawTaosError(TaosError { code, err }) => {
             println!("{}", err);
-            assert_eq!(code, TaosCode::MnodeInvalidTableName);
+            assert_eq!(code, TaosCode::MndInvalidTableName);
         }
 
         _ => {
