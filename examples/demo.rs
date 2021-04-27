@@ -45,7 +45,8 @@ async fn main() -> Result<(), Error> {
         true
     );
 
-    taos.query(format!("insert into m1 values (now-1s, NULL)").as_str()).await?;
+    taos.query(format!("insert into m1 values (now-1s, NULL)").as_str())
+        .await?;
     for i in 0..10i32 {
         assert_eq!(
             taos.query(format!("insert into m1 values (now+{}s, {})", i, i).as_str())
