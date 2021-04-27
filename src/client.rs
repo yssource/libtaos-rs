@@ -8,6 +8,7 @@ use std::os::raw::{c_char, c_void};
 use std::sync::Mutex;
 
 use crate::field::*;
+use crate::error::*;
 
 /// Make sure to cleanup taos client workspace before exit.
 struct CleanUpPhantomData(bool);
@@ -303,7 +304,10 @@ impl CTaosResult {
                         TaosDataType::USmallInt => Field::USmallInt(*(*ptr as *mut u16)),
                         TaosDataType::UInt => Field::UInt(*(*ptr as *mut u32)),
                         TaosDataType::UBigInt => Field::UBigInt(*(*ptr as *mut u64)),
-                        TaosDataType::Timestamp => Field::Timestamp(*(*ptr as *mut i64)),
+                        TaosDataType::Timestamp => Field::Timestamp(field::Timestamp::new(
+                            *(*ptr as *mut i64),
+                            taos_result_precision(self.res),
+                        )),
                         TaosDataType::Float => Field::Float(*(*ptr as *mut f32)),
                         TaosDataType::Double => Field::Double(*(*ptr as *mut f64)),
                         TaosDataType::Binary => Field::Binary(
