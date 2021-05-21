@@ -11,6 +11,9 @@ use thiserror::Error;
 #[cfg(not(feature = "rest"))]
 pub mod bindings;
 
+mod util;
+use util::*;
+
 mod error;
 pub mod field;
 #[cfg(feature = "rest")]

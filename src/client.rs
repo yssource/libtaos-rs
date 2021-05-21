@@ -10,80 +10,8 @@ use std::sync::Mutex;
 use crate::field::*;
 use crate::error::*;
 
-/// Make sure to cleanup taos client workspace before exit.
-struct CleanUpPhantomData(bool);
-impl Drop for CleanUpPhantomData {
-    fn drop(&mut self) {
-        eprintln!("clean up");
-        // unsafe {
-        //     taos_cleanup();
-        // }
-    }
-}
-
 lazy_static! {
     static ref TAOS_INIT_LOCK: Mutex<u32> = Mutex::new(0);
-}
-
-trait TaosErrorOr: Sized {
-    fn taos_error_or(self) -> Result<Self, TaosError>;
-}
-
-macro_rules! impl_taos_error_or {
-    ($ty:ty ) => {
-        impl TaosErrorOr for $ty {
-            fn taos_error_or(self) -> Result<Self, TaosError> {
-                unsafe {
-                    let errno = taos_errno(self as _);
-                    trace!("error code: {:#0x}", errno & 0x0000ffff);
-                    let code: TaosCode = (errno & 0x0000ffff).into();
-                    if !code.success() {
-                        let err = CStr::from_ptr(taos_errstr(self as _) as *const c_char)
-                            .to_string_lossy()
-                            .into_owned();
-                        // here, it could also be &'static str, but we use string instead.
-                        return Err(TaosError {
-                            code,
-                            err: Cow::from(err),
-                        });
-                    } else {
-                        Ok(self)
-                    }
-                }
-            }
-        }
-    };
-}
-impl_taos_error_or!(*mut c_void);
-impl_taos_error_or!(*const c_void);
-
-trait NullOr: Sized {
-    fn null_or(self) -> Option<Self>;
-}
-
-macro_rules! impl_null_or {
-    ($ty:ty ) => {
-        impl NullOr for $ty {
-            fn null_or(self) -> Option<Self> {
-                if self.is_null() {
-                    None
-                } else {
-                    Some(self)
-                }
-            }
-        }
-    };
-}
-
-impl_null_or!(*const c_void);
-impl_null_or!(*mut c_void);
-impl_null_or!(*mut *mut c_void);
-impl_null_or!(*const *mut c_void);
-#[test]
-fn test_value_or() {
-    let mut a = 0;
-    let b = &mut a as *mut i32 as *mut c_void;
-    b.null_or();
 }
 
 #[derive(Debug)]
@@ -126,7 +54,7 @@ impl Taos {
         let pass = pass.to_c_string();
         let db = db.to_c_string();
 
-        // Call taos_init at first connection.\
+        // Call taos_init at first connection.
         {
             let mut n = TAOS_INIT_LOCK.lock().unwrap();
             if *n == 0 {
@@ -142,10 +70,10 @@ impl Taos {
                 db.as_ptr(),
                 port as u16,
             )
-            .null_or();
+            .as_mut();
             match conn {
                 None => Err(Error::ConnectionInvalid),
-                Some(conn) => Ok(Taos { conn }),
+                Some(conn) => Ok(Taos { conn: conn as _ }),
             }
         }
     }
@@ -284,7 +212,7 @@ impl CTaosResult {
             })
             .collect_vec();
 
-        while let Some(taos_row) = unsafe { taos_fetch_row(self.res) }.null_or() {
+        while let Some(taos_row) = unsafe { taos_fetch_row(self.res).as_ref() } {
             let row = unsafe { std::slice::from_raw_parts(taos_row, fcount as usize) }
                 .into_iter()
                 .zip(fields.iter())

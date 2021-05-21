@@ -181,3 +181,104 @@ impl fmt::Display for Field {
         }
     }
 }
+
+impl Field {
+    pub fn as_bool(&self) -> Option<&bool> {
+        match self {
+            Field::Bool(v) => Some(v),
+            _ => None
+        }
+    }
+    pub fn as_tiny_int(&self) -> Option<&i8> {
+        match self {
+            Field::TinyInt(v) => Some(v),
+            _ => None
+        }
+    }
+    pub fn as_small_int(&self) -> Option<&i16> {
+        match self {
+            Field::SmallInt(v) => Some(v),
+            _ => None
+        }
+    }
+    pub fn as_int(&self) -> Option<&i32> {
+        match self {
+            Field::Int(v) => Some(v),
+            _ => None
+        }
+    }
+    pub fn as_big_int(&self) -> Option<&i64> {
+        match self {
+            Field::BigInt(v) => Some(v),
+            _ => None
+        }
+    }
+    pub fn as_float(&self) -> Option<&f32> {
+        match self {
+            Field::Float(v) => Some(v),
+            _ => None
+        }
+    }
+    pub fn as_double(&self) -> Option<&f64> {
+        match self {
+            Field::Double(v) => Some(v),
+            _ => None
+        }
+    }
+    pub fn as_binary(&self) -> Option<&str> {
+        match self {
+            Field::Binary(v)=> Some(v),
+            _ => None
+        }
+    }
+    pub fn as_nchar(&self) -> Option<&str> {
+        match self {
+            Field::NChar(v)=> Some(v),
+            _ => None
+        }
+    }
+
+    /// BINARY or NCHAR typed string reference
+    pub fn as_string(&self) -> Option<&str> {
+        match self {
+            Field::Binary(v) | Field::NChar(v)=> Some(v),
+            _ => None
+        }
+    }
+    pub fn as_timestamp(&self) -> Option<&Timestamp> {
+        match self {
+            Field::Timestamp(v) => Some(v),
+            _ => None
+        }
+    }
+    pub fn as_raw_timestamp(&self) -> Option<i64> {
+        match self {
+            Field::Timestamp(v) => Some(v.as_raw_timestamp()),
+            _ => None
+        }
+    }
+    pub fn as_unsigned_tiny_int(&self) -> Option<&u8> {
+        match self {
+            Field::UTinyInt(v) => Some(v),
+            _ => None
+        }
+    }
+    pub fn as_unsigned_samll_int(&self) -> Option<&u16> {
+        match self {
+            Field::USmallInt(v) => Some(v),
+            _ => None
+        }
+    }
+    pub fn as_unsigned_int(&self) -> Option<&u32> {
+        match self {
+            Field::UInt(v) => Some(v),
+            _ => None
+        }
+    }
+    pub fn as_unsigned_big_int(&self) -> Option<&u64> {
+        match self {
+            Field::UBigInt(v) => Some(v),
+            _ => None
+        }
+    }
+}

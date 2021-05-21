@@ -31,3 +31,10 @@ async fn describe() -> () {
     let res = res.unwrap();
     let _ = dbg!(res.names());
 }
+
+#[tokio::test]
+async fn query() -> () {
+    let taos = init::taos().unwrap();
+    let res = taos.query("select * from log.log limit 10").await;
+    assert!(res.is_ok());
+}
