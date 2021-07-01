@@ -1,82 +1,12 @@
-use chrono::NaiveDateTime;
-
+use bstr::{BStr, BString};
 use itertools::Itertools;
 use num_enum::FromPrimitive;
+use paste::paste;
 use serde::Deserialize;
-use std::{
-    fmt,
-    fmt::Display,
-    time::{self, SystemTime},
-};
 
-#[derive(Serialize_repr, Deserialize_repr, Debug, Clone, Copy, Eq, PartialEq, FromPrimitive)]
-#[repr(i32)]
-pub enum TimestampPrecision {
-    Milli = 0,
-    Micro = 1,
-    Nano = 2,
-    #[num_enum(default)]
-    Unknown = -1,
-}
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Timestamp {
-    pub(crate) timestamp: i64,
-    pub(crate) precision: TimestampPrecision,
-}
+use std::fmt;
 
-impl Timestamp {
-    pub fn new(timestamp: i64, precision: impl Into<TimestampPrecision>) -> Self {
-        Self {
-            timestamp,
-            precision: precision.into(),
-        }
-    }
-    pub fn as_raw_timestamp(&self) -> i64 {
-        self.timestamp
-    }
-    pub fn to_std_time(&self) -> SystemTime {
-        let duration = match self.precision {
-            TimestampPrecision::Nano => time::Duration::from_nanos(self.timestamp.abs() as _),
-            TimestampPrecision::Micro => time::Duration::from_micros(self.timestamp.abs() as _),
-            TimestampPrecision::Milli => time::Duration::from_millis(self.timestamp.abs() as _),
-            _ => unreachable!("not a valid precision"),
-        };
-        if self.timestamp > 0 {
-            SystemTime::UNIX_EPOCH.checked_add(duration).unwrap()
-        } else if self.timestamp == 0 {
-            SystemTime::UNIX_EPOCH
-        } else {
-            SystemTime::UNIX_EPOCH.checked_sub(duration).unwrap()
-        }
-    }
-
-    pub fn to_naive_datetime(&self) -> NaiveDateTime {
-        let duration = match self.precision {
-            TimestampPrecision::Nano => chrono::Duration::nanoseconds(self.timestamp),
-            TimestampPrecision::Micro => chrono::Duration::microseconds(self.timestamp),
-            TimestampPrecision::Milli => chrono::Duration::milliseconds(self.timestamp),
-            _ => unreachable!("not a valid precision"),
-        };
-        NaiveDateTime::from_timestamp(0, 0)
-            .checked_add_signed(duration)
-            .unwrap()
-    }
-    pub fn to_string(&self) -> String {
-        let format = match self.precision {
-            TimestampPrecision::Nano => "%Y-%m-%d %H:%M:%S%.9f",
-            TimestampPrecision::Micro => "%Y-%m-%d %H:%M:%S%.6f",
-            TimestampPrecision::Milli => "%Y-%m-%d %H:%M:%S%.3f",
-            _ => unreachable!("not a valid precision"),
-        };
-        self.to_naive_datetime().format(format).to_string()
-    }
-}
-
-impl Display for Timestamp {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.to_string())
-    }
-}
+use crate::Timestamp;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ColumnMeta {
@@ -118,6 +48,7 @@ impl TaosQueryData {
         self.rows.len()
     }
 }
+
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 #[derive(Serialize_repr, Deserialize_repr, Debug, Clone, Copy, Eq, PartialEq, FromPrimitive)]
@@ -142,7 +73,7 @@ pub enum TaosDataType {
     NonZero = 255,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Field {
     Null,        // 0
     Bool(bool),  // 1
@@ -152,7 +83,7 @@ pub enum Field {
     BigInt(i64),
     Float(f32),
     Double(f64),
-    Binary(String),
+    Binary(BString),
     Timestamp(Timestamp),
     NChar(String),
     UTinyInt(u8),
@@ -172,7 +103,8 @@ impl fmt::Display for Field {
             Field::BigInt(v) => write!(f, "{}", v),
             Field::Float(v) => write!(f, "{}", v),
             Field::Double(v) => write!(f, "{}", v),
-            Field::Binary(v) | Field::NChar(v) => write!(f, "{}", v),
+            Field::Binary(v) => write!(f, "{}", v),
+            Field::NChar(v) => write!(f, "{}", v),
             Field::Timestamp(v) => write!(f, "{}", v),
             Field::UTinyInt(v) => write!(f, "{}", v),
             Field::USmallInt(v) => write!(f, "{}", v),
@@ -186,99 +118,166 @@ impl Field {
     pub fn as_bool(&self) -> Option<&bool> {
         match self {
             Field::Bool(v) => Some(v),
-            _ => None
+            _ => None,
         }
     }
     pub fn as_tiny_int(&self) -> Option<&i8> {
         match self {
             Field::TinyInt(v) => Some(v),
-            _ => None
+            _ => None,
         }
     }
     pub fn as_small_int(&self) -> Option<&i16> {
         match self {
             Field::SmallInt(v) => Some(v),
-            _ => None
+            _ => None,
         }
     }
     pub fn as_int(&self) -> Option<&i32> {
         match self {
             Field::Int(v) => Some(v),
-            _ => None
+            _ => None,
         }
     }
     pub fn as_big_int(&self) -> Option<&i64> {
         match self {
             Field::BigInt(v) => Some(v),
-            _ => None
+            _ => None,
         }
     }
     pub fn as_float(&self) -> Option<&f32> {
         match self {
             Field::Float(v) => Some(v),
-            _ => None
+            _ => None,
         }
     }
     pub fn as_double(&self) -> Option<&f64> {
         match self {
             Field::Double(v) => Some(v),
-            _ => None
+            _ => None,
         }
     }
-    pub fn as_binary(&self) -> Option<&str> {
+    pub fn as_binary(&self) -> Option<&BStr> {
         match self {
-            Field::Binary(v)=> Some(v),
-            _ => None
+            Field::Binary(v) => Some(v.as_ref()),
+            _ => None,
         }
     }
     pub fn as_nchar(&self) -> Option<&str> {
         match self {
-            Field::NChar(v)=> Some(v),
-            _ => None
+            Field::NChar(v) => Some(v),
+            _ => None,
         }
     }
 
     /// BINARY or NCHAR typed string reference
-    pub fn as_string(&self) -> Option<&str> {
+    pub fn as_string(&self) -> Option<String> {
         match self {
-            Field::Binary(v) | Field::NChar(v)=> Some(v),
-            _ => None
+            Field::Binary(v) => Some(v.to_string()),
+            Field::NChar(v) => Some(v.to_string()),
+            _ => None,
         }
     }
     pub fn as_timestamp(&self) -> Option<&Timestamp> {
         match self {
             Field::Timestamp(v) => Some(v),
-            _ => None
+            _ => None,
         }
     }
     pub fn as_raw_timestamp(&self) -> Option<i64> {
         match self {
             Field::Timestamp(v) => Some(v.as_raw_timestamp()),
-            _ => None
+            _ => None,
         }
     }
     pub fn as_unsigned_tiny_int(&self) -> Option<&u8> {
         match self {
             Field::UTinyInt(v) => Some(v),
-            _ => None
+            _ => None,
         }
     }
     pub fn as_unsigned_samll_int(&self) -> Option<&u16> {
         match self {
             Field::USmallInt(v) => Some(v),
-            _ => None
+            _ => None,
         }
     }
     pub fn as_unsigned_int(&self) -> Option<&u32> {
         match self {
             Field::UInt(v) => Some(v),
-            _ => None
+            _ => None,
         }
     }
     pub fn as_unsigned_big_int(&self) -> Option<&u64> {
         match self {
             Field::UBigInt(v) => Some(v),
-            _ => None
+            _ => None,
         }
+    }
+
+    pub fn data_type(&self) -> TaosDataType {
+        match self {
+            Field::Null => TaosDataType::Null,
+            Field::Bool(_v) => TaosDataType::Bool,
+            Field::TinyInt(_v) => TaosDataType::TinyInt,
+            Field::SmallInt(_v) => TaosDataType::SmallInt,
+            Field::Int(_v) => TaosDataType::Int,
+            Field::BigInt(_v) => TaosDataType::BigInt,
+            Field::Float(_v) => TaosDataType::Float,
+            Field::Double(_v) => TaosDataType::Double,
+            Field::Binary(_v) => TaosDataType::Binary,
+            Field::NChar(_v) => TaosDataType::NChar,
+            Field::Timestamp(_v) => TaosDataType::Timestamp,
+            Field::UTinyInt(_v) => TaosDataType::UTinyInt,
+            Field::USmallInt(_v) => TaosDataType::USmallInt,
+            Field::UInt(_v) => TaosDataType::UInt,
+            Field::UBigInt(_v) => TaosDataType::UBigInt,
+        }
+    }
+}
+
+pub trait IntoField {
+    fn into_field(self) -> Field;
+}
+
+macro_rules! _impl_primitive_type {
+    ($ty:ty, $target:ident, $v:expr) => {
+        impl IntoField for $ty {
+            fn into_field(self) -> Field {
+                Field::$target(self)
+            }
+        }
+        paste! {
+            #[test]
+            fn [<test_ $ty:snake>]() {
+                let v: $ty = $v;
+                assert_eq!(v.clone().into_field(), Field::$target(v));
+            }
+        }
+    };
+}
+
+_impl_primitive_type!(bool, Bool, true);
+_impl_primitive_type!(i8, TinyInt, 0);
+_impl_primitive_type!(i16, SmallInt, 0);
+_impl_primitive_type!(i32, Int, 0);
+_impl_primitive_type!(i64, BigInt, 0);
+_impl_primitive_type!(u8, UTinyInt, 0);
+_impl_primitive_type!(u16, USmallInt, 0);
+_impl_primitive_type!(u32, UInt, 0);
+_impl_primitive_type!(u64, UBigInt, 0);
+_impl_primitive_type!(f32, Float, 0.);
+_impl_primitive_type!(f64, Double, 0.);
+_impl_primitive_type!(BString, Binary, "A".into());
+_impl_primitive_type!(String, NChar, "A".into());
+
+impl IntoField for &BStr {
+    fn into_field(self) -> Field {
+        self.to_owned().into_field()
+    }
+}
+impl IntoField for &str {
+    fn into_field(self) -> Field {
+        self.to_owned().into_field()
     }
 }

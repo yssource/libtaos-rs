@@ -1,14 +1,9 @@
-use libtaos::*;
-use std::env::var;
-
-pub fn init() {
-    std::env::set_var("RUST_LOG", "libtaos=trace");
-    env_logger::init();
-}
+use crate::*;
 
 pub fn var_or_default(env: &str, default: &str) -> String {
-    var(env).unwrap_or(default.to_string())
+    std::env::var(env).unwrap_or(default.to_string())
 }
+
 pub fn taos() -> Result<Taos, Error> {
     TaosCfgBuilder::default()
         .ip(&var_or_default("TEST_TAOS_IP", "127.0.0.1"))

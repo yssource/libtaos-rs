@@ -33,8 +33,9 @@ async fn describe() -> () {
 }
 
 #[tokio::test]
-async fn query() -> () {
-    let taos = init::taos().unwrap();
-    let res = taos.query("select * from log.log limit 10").await;
-    assert!(res.is_ok());
+async fn query() -> Result<(), Error> {
+    let taos = init::taos()?;
+    let _res = taos.query("select * from log.log limit 10").await?;
+    // assert!(res.is_ok());
+    Ok(())
 }
