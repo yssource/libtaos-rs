@@ -3,12 +3,12 @@ use crate::*;
 
 use lazy_static::lazy_static;
 
-use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_void};
+use std::ffi::{CStr};
+use std::os::raw::{c_char};
 use std::sync::Mutex;
 
-use crate::field::*;
 use crate::error::*;
+use crate::field::*;
 
 lazy_static! {
     static ref TAOS_INIT_LOCK: Mutex<u32> = Mutex::new(0);
@@ -22,25 +22,6 @@ pub struct Taos {
 unsafe impl Send for Taos {}
 unsafe impl Sync for Taos {}
 
-pub trait ToCString {
-    fn to_c_string(&self) -> CString;
-}
-
-impl ToCString for str {
-    fn to_c_string(&self) -> CString {
-        CString::new(self).expect("CString::new should not fail here")
-    }
-}
-impl ToCString for &str {
-    fn to_c_string(&self) -> CString {
-        CString::new(*self).expect("CString::new should not fail here")
-    }
-}
-impl ToCString for &String {
-    fn to_c_string(&self) -> CString {
-        CString::new(self.as_str()).expect("CString::new should not fail here")
-    }
-}
 impl Taos {
     pub fn new(
         ip: impl ToCString,
@@ -120,11 +101,11 @@ impl Taos {
             .map(TaosDescribe::from)
     }
 
-    pub async fn exec(&self, sql: &str) -> Result<(), Error> {
+    pub async fn exec(&self, sql: impl ToCString) -> Result<(), Error> {
         self.raw_query(sql).map(|_| ())
     }
-    pub fn raw_query(&self, s: &str) -> Result<CTaosResult, Error> {
-        let cstr = CString::new(s).expect("CString::new should not fail here");
+    pub fn raw_query(&self, s: impl ToCString) -> Result<CTaosResult, Error> {
+        let cstr = s.to_c_string();
         let res = CTaosResult::new(unsafe { taos_query(self.conn, cstr.as_ptr()) })?;
         Ok(res)
     }
@@ -214,7 +195,7 @@ impl CTaosResult {
 
         while let Some(taos_row) = unsafe { taos_fetch_row(self.res).as_ref() } {
             let row = unsafe { std::slice::from_raw_parts(taos_row, fcount as usize) }
-                .into_iter()
+                .iter()
                 .zip(fields.iter())
                 .map(|(ptr, meta)| unsafe {
                     if ptr.is_null() {
@@ -232,7 +213,7 @@ impl CTaosResult {
                         TaosDataType::USmallInt => Field::USmallInt(*(*ptr as *mut u16)),
                         TaosDataType::UInt => Field::UInt(*(*ptr as *mut u32)),
                         TaosDataType::UBigInt => Field::UBigInt(*(*ptr as *mut u64)),
-                        TaosDataType::Timestamp => Field::Timestamp(field::Timestamp::new(
+                        TaosDataType::Timestamp => Field::Timestamp(Timestamp::new(
                             *(*ptr as *mut i64),
                             taos_result_precision(self.res),
                         )),
@@ -241,7 +222,8 @@ impl CTaosResult {
                         TaosDataType::Binary => Field::Binary(
                             CStr::from_ptr((*ptr) as *const c_char)
                                 .to_string_lossy()
-                                .into_owned(),
+                                .into_owned()
+                                .into(),
                         ),
                         TaosDataType::NChar => Field::NChar(
                             CStr::from_ptr((*ptr) as *const c_char)

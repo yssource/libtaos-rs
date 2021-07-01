@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use std::time::Duration;
 
 use itertools::Itertools;
@@ -6,6 +7,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::field::*;
+use crate::*;
 use crate::{error::TaosCode, Error, TaosError};
 #[derive(Debug, Clone)]
 pub struct Taos {
@@ -89,11 +91,16 @@ fn value_to_field(from: &TaosQueryResponse, value: Value, meta: &ColumnMeta) -> 
                 .as_u64()
                 .expect("the column declared as usigned bigint but not") as u64,
         ),
-        TaosDataType::Timestamp => Field::Timestamp(
-            value
-                .as_i64()
-                .expect("the column declared as timestamp but not") as i64,
-        ),
+        TaosDataType::Timestamp => Field::Timestamp(if value.is_i64() {
+            Timestamp {
+                timestamp: value.as_i64().expect("timestamp i64"),
+                precision: TimestampPrecision::Milli,
+            }
+        } else if let Some(s) = value.as_str() {
+            Timestamp::from_str(s).expect("parse timestamp format error")
+        } else {
+            unimplemented!("unknown timestamp format")
+        }),
         TaosDataType::Float => Field::Float(
             value
                 .as_f64()
@@ -105,7 +112,7 @@ fn value_to_field(from: &TaosQueryResponse, value: Value, meta: &ColumnMeta) -> 
                 .expect("the column declared as double but not"),
         ),
         TaosDataType::Binary => match value {
-            Value::String(str) => Field::Binary(str),
+            Value::String(str) => Field::Binary(str.into()),
             v => unreachable!(&format!(
                 "the column declared as binary but not: {:?}, from {:?}",
                 v, from
@@ -246,6 +253,3 @@ impl Taos {
         res.into()
     }
 }
-
-#[test]
-fn test_taos() {}

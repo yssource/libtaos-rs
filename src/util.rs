@@ -1,9 +1,11 @@
 use crate::bindings::*;
 use crate::{TaosCode, TaosError};
 
+use bstr::{BStr, BString};
 use log::trace;
+
 use std::borrow::Cow;
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 
 pub trait TaosErrorOr: Sized {
@@ -37,3 +39,48 @@ macro_rules! impl_taos_error_or {
 }
 impl_taos_error_or!(*mut c_void);
 impl_taos_error_or!(*const c_void);
+
+pub trait ToCString {
+    fn to_c_string(&self) -> CString;
+}
+
+impl ToCString for str {
+    fn to_c_string(&self) -> CString {
+        CString::new(self).expect("CString::new should not fail here")
+    }
+}
+impl ToCString for &str {
+    fn to_c_string(&self) -> CString {
+        CString::new(*self).expect("CString::new should not fail here")
+    }
+}
+impl ToCString for &String {
+    fn to_c_string(&self) -> CString {
+        CString::new(self.as_str()).expect("CString::new should not fail here")
+    }
+}
+impl ToCString for String {
+    fn to_c_string(&self) -> CString {
+        CString::new(self.as_str()).expect("CString::new should not fail here")
+    }
+}
+impl ToCString for CString {
+    fn to_c_string(&self) -> CString {
+        self.clone()
+    }
+}
+impl ToCString for CStr {
+    fn to_c_string(&self) -> CString {
+        self.to_owned()
+    }
+}
+impl ToCString for BStr {
+    fn to_c_string(&self) -> CString {
+        self.to_string().to_c_string()
+    }
+}
+impl ToCString for BString {
+    fn to_c_string(&self) -> CString {
+        self.to_string().to_c_string()
+    }
+}

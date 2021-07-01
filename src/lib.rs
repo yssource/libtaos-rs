@@ -11,10 +11,15 @@ use thiserror::Error;
 #[cfg(not(feature = "rest"))]
 pub mod bindings;
 
+#[cfg(not(feature = "rest"))]
 mod util;
-use util::*;
+#[cfg(not(feature = "rest"))]
+pub(crate) use util::*;
 
 mod error;
+mod timestamp;
+pub use timestamp::*;
+
 pub mod field;
 #[cfg(feature = "rest")]
 mod rest;
@@ -26,7 +31,11 @@ mod client;
 #[cfg(not(feature = "rest"))]
 pub use client::*;
 
+#[cfg(all(not(feature = "rest"), feature = "stmt"))]
+pub mod stmt;
+
 pub use error::*;
+pub use field::*;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -105,3 +114,6 @@ impl r2d2::ManageConnection for TaosCfg {
         false
     }
 }
+
+#[cfg(test)]
+pub mod test;
