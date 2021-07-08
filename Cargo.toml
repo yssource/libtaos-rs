@@ -34,6 +34,7 @@ env_logger = "0.8.3"
 tokio = {version = "1.5.0", features = ["rt", "macros", "rt-multi-thread"]}
 
 [features]
-default = ["stmt"]
+default = ["stmt", "cleanup"]
 rest = ["reqwest"]
 stmt = []
+cleanup = []

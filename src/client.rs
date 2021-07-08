@@ -3,13 +3,14 @@ use crate::*;
 
 use lazy_static::lazy_static;
 
-use std::ffi::{CStr};
-use std::os::raw::{c_char};
+use std::ffi::CStr;
+use std::os::raw::c_char;
 use std::sync::Mutex;
 
 use crate::error::*;
 use crate::field::*;
 
+#[cfg(feature = "cleanup")]
 lazy_static! {
     static ref TAOS_INIT_LOCK: Mutex<u32> = Mutex::new(0);
 }
@@ -35,6 +36,7 @@ impl Taos {
         let pass = pass.to_c_string();
         let db = db.to_c_string();
 
+        #[cfg(feature = "cleanup")]
         // Call taos_init at first connection.
         {
             let mut n = TAOS_INIT_LOCK.lock().unwrap();
@@ -121,16 +123,19 @@ impl Taos {
 
 impl Drop for Taos {
     fn drop(&mut self) {
-        let mut n = TAOS_INIT_LOCK.lock().unwrap();
         // reduce connection count and call clean_up after the last connection closed.
         unsafe {
             taos_close(self.conn);
         }
-        *n -= 1;
-        if *n == 0 {
-            trace!("taos client workspace cleanup");
-            unsafe { taos_cleanup() };
-            trace!("taos client workspace cleaned");
+        #[cfg(feature = "cleanup")]
+        {
+            let mut n = TAOS_INIT_LOCK.lock().unwrap();
+            *n -= 1;
+            if *n == 0 {
+                trace!("taos client workspace cleanup");
+                unsafe { taos_cleanup() };
+                trace!("taos client workspace cleaned");
+            }
         }
     }
 }
