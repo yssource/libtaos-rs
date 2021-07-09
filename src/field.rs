@@ -35,6 +35,34 @@ impl TaosDescribe {
             })
             .collect_vec()
     }
+    pub fn col_names(&self) -> Vec<String> {
+        self.0
+            .rows
+            .iter()
+            .filter(|row| {
+                row[3] != Field::Binary("TAG".into())
+            })
+            .map(|row| {
+                row.first()
+                    .expect("first column must exists in describe")
+                    .to_string()
+            })
+            .collect_vec()
+    }
+    pub fn tag_names(&self) -> Vec<String> {
+        self.0
+            .rows
+            .iter()
+            .filter(|row| {
+                row[3] == Field::Binary("TAG".into())
+            })
+            .map(|row| {
+                row.first()
+                    .expect("first column must exists in describe")
+                    .to_string()
+            })
+            .collect_vec()
+    }
 }
 
 impl From<TaosQueryData> for TaosDescribe {

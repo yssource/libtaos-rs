@@ -1,18 +1,15 @@
 use crate::bindings::*;
 use crate::*;
 
-use lazy_static::lazy_static;
-
 use std::ffi::CStr;
 use std::os::raw::c_char;
-use std::sync::Mutex;
 
 use crate::error::*;
 use crate::field::*;
 
 #[cfg(feature = "cleanup")]
-lazy_static! {
-    static ref TAOS_INIT_LOCK: Mutex<u32> = Mutex::new(0);
+lazy_static::lazy_static! {
+    static ref TAOS_INIT_LOCK: std::sync::Mutex<u32> = std::sync::Mutex::new(0);
 }
 
 #[derive(Debug)]

@@ -5,7 +5,7 @@ use std::ffi::CStr;
 use std::os::raw::c_void;
 
 mod bind;
-use bind::{BindParam, IntoBindParam};
+pub use bind::{BindParam, IntoBindParam};
 
 pub trait IntoParams {
     fn into_params(self) -> Vec<BindParam>;

@@ -11,10 +11,17 @@ use std::{time::SystemTime};
 
 pub type BindParam = TAOS_BIND;
 
+unsafe impl std::marker::Send for BindParam {}
+
 pub trait IntoBindParam {
     fn into_bind_param(self) -> BindParam;
 }
 
+impl IntoBindParam for BindParam {
+    fn into_bind_param(self) -> BindParam {
+        self
+    }
+}
 impl BindParam {
     pub fn new(buffer_type: TaosDataType) -> Self {
         let buffer: *mut c_void = ptr::null_mut();
