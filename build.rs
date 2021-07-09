@@ -1,13 +1,12 @@
-use std::env;
-use std::path::PathBuf;
-
-#[cfg(feature = "rest")]
+#[cfg(not(feature = "bindgen"))]
 fn main() {
     // nothing to do.
 }
 
-#[cfg(not(feature = "rest"))]
+#[cfg(feature = "bindgen")]
 fn main() {
+    use std::env;
+    use std::path::PathBuf;
     // Tell cargo to tell rustc to link the system bzip2
     // shared library.
     println!("cargo:rustc-link-lib=taos");
