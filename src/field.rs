@@ -5,6 +5,7 @@ use paste::paste;
 use serde::Deserialize;
 
 use std::fmt;
+use std::str::FromStr;
 
 use crate::Timestamp;
 
@@ -21,53 +22,73 @@ pub struct TaosQueryData {
 }
 
 #[derive(Debug)]
-pub struct TaosDescribe(TaosQueryData);
-
-impl TaosDescribe {
-    pub fn names(&self) -> Vec<String> {
-        self.0
-            .rows
-            .iter()
-            .map(|row| {
-                row.first()
-                    .expect("first column must exists in describe")
-                    .to_string()
-            })
-            .collect_vec()
-    }
-    pub fn col_names(&self) -> Vec<String> {
-        self.0
-            .rows
-            .iter()
-            .filter(|row| {
-                row[3] != Field::Binary("TAG".into())
-            })
-            .map(|row| {
-                row.first()
-                    .expect("first column must exists in describe")
-                    .to_string()
-            })
-            .collect_vec()
-    }
-    pub fn tag_names(&self) -> Vec<String> {
-        self.0
-            .rows
-            .iter()
-            .filter(|row| {
-                row[3] == Field::Binary("TAG".into())
-            })
-            .map(|row| {
-                row.first()
-                    .expect("first column must exists in describe")
-                    .to_string()
-            })
-            .collect_vec()
-    }
+pub struct TaosDescribe {
+    pub cols: Vec<ColumnMeta>,
+    pub tags: Vec<ColumnMeta>,
 }
 
+impl TaosDescribe {
+    pub fn names(&self) -> Vec<&String> {
+        self.cols
+            .iter()
+            .chain(self.tags.iter())
+            .map(|t| &t.name)
+            .collect_vec()
+    }
+
+    pub fn col_names(&self) -> Vec<&String> {
+        self.cols.iter().map(|t| &t.name).collect_vec()
+    }
+    pub fn tag_names(&self) -> Vec<&String> {
+        self.tags.iter().map(|t| &t.name).collect_vec()
+    }
+}
+impl FromStr for TaosDataType {
+    type Err = &'static str;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "timestamp" => Ok(TaosDataType::Timestamp),
+            "bool" => Ok(TaosDataType::Bool),
+            "tinyint" => Ok(TaosDataType::TinyInt),
+            "smallint" => Ok(TaosDataType::SmallInt),
+            "int" => Ok(TaosDataType::Int),
+            "bigint" => Ok(TaosDataType::BigInt),
+            "utinyint" => Ok(TaosDataType::UTinyInt),
+            "usmallint" => Ok(TaosDataType::USmallInt),
+            "uint" => Ok(TaosDataType::UInt),
+            "ubigint" => Ok(TaosDataType::UBigInt),
+            "float" => Ok(TaosDataType::Float),
+            "double" => Ok(TaosDataType::Double),
+            "binary" => Ok(TaosDataType::Binary),
+            "nchar" => Ok(TaosDataType::NChar),
+            _ => Err("not a valid data type string"),
+        }
+    }
+}
 impl From<TaosQueryData> for TaosDescribe {
     fn from(rhs: TaosQueryData) -> Self {
-        Self(rhs)
+        let (cols, tags): (Vec<_>, Vec<_>) = rhs
+            .rows
+            .iter()
+            .partition(|row| row[3] != Field::Binary("TAG".into()));
+        Self {
+            cols: cols
+                .into_iter()
+                .map(|row| ColumnMeta {
+                    name: row[0].to_string(),
+                    type_: TaosDataType::from_str(&row[1].to_string()).expect("from describe"),
+                    bytes: *row[2].as_int().unwrap() as _,
+                })
+                .collect_vec(),
+            tags: tags
+                .into_iter()
+                .map(|row| ColumnMeta {
+                    name: row[0].to_string(),
+                    type_: TaosDataType::from_str(&row[1].to_string()).expect("from describe"),
+                    bytes: *row[2].as_int().unwrap() as _,
+                })
+                .collect_vec(),
+        }
     }
 }
 impl TaosQueryData {
@@ -98,7 +119,7 @@ pub enum TaosDataType {
     UInt,      // 13
     UBigInt,   // 14
     #[num_enum(default)]
-    NonZero = 255,
+    Unknown = 255,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -307,5 +328,24 @@ impl IntoField for &BStr {
 impl IntoField for &str {
     fn into_field(self) -> Field {
         self.to_owned().into_field()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::test::taos;
+    use crate::*;
+
+    #[tokio::test]
+    async fn test_describe() -> Result<(), Error> {
+        let db = stdext::function_name!()
+            .replace("::{{closure}}", "")
+            .replace("::", "_");
+        println!("{}", db);
+        let taos = taos()?;
+        let desc = taos.describe("log.dn").await?;
+        assert_eq!(desc.cols.len(), 15);
+        assert_eq!(desc.tags.len(), 2);
+        Ok(())
     }
 }
