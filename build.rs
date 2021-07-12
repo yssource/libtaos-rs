@@ -1,6 +1,8 @@
 #[cfg(not(feature = "bindgen"))]
 fn main() {
+    #[cfg(not(feature = "rest"))]
     // nothing to do.
+    println!("cargo:rustc-link-lib=taos");
 }
 
 #[cfg(feature = "bindgen")]
