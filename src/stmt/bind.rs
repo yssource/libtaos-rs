@@ -12,6 +12,7 @@ use std::{time::SystemTime};
 pub type BindParam = TAOS_BIND;
 
 unsafe impl std::marker::Send for BindParam {}
+unsafe impl std::marker::Sync for BindParam {}
 
 pub trait IntoBindParam {
     fn into_bind_param(self) -> BindParam;

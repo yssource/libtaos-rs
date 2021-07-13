@@ -68,6 +68,17 @@ impl Stmt {
         Ok(())
     }
 
+    /// Bind params for one record.
+    pub fn bind_inplace(&mut self, params: &[BindParam]) -> Result<(), TaosError> {
+        unsafe {
+            let res = taos_stmt_bind_param(self.stmt, params.as_ptr() as _);
+            self.err_or(res)?;
+            let res = taos_stmt_add_batch(self.stmt);
+            self.err_or(res)?;
+        }
+        Ok(())
+    }
+
     pub fn bind_batch_at_col<T>(&mut self, _params: T) -> Result<(), TaosError>
     where
         T: IntoIterator,
@@ -86,9 +97,9 @@ impl Stmt {
     pub fn set_tbname_tags(
         &mut self,
         tbname: impl ToCString,
-        tags: impl IntoParams,
+        tags: &[BindParam],
     ) -> Result<(), TaosError> {
-        let tags = tags.into_params();
+        // let tags = tags.into_params();
         unsafe {
             let res = taos_stmt_set_tbname_tags(
                 self.stmt,
