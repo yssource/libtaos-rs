@@ -2,7 +2,7 @@
 authors = ["Linhe Huo <linhehuo@gmail.com>"]
 edition = "2018"
 name = "libtaos"
-version = "0.3.7-alpha.0"
+version = "0.3.7"
 keywords = ["TDengine", "taos", "r2d2", "database", "tsdb"]
 license = "AGPL-3.0"
 repository = "https://github.com/taosdata/libtaos-rs.git"
