@@ -113,6 +113,28 @@ impl Taos {
         Ok(res.fetch_fields())
     }
 
+    /// Warmup table metadata cache with a list of table name, separated by comma.
+    ///
+    /// ```rust,no_run
+    /// let tables = CString::new("table1,table2");
+    /// taos.load_table_info(&tables)?;
+    /// ```
+    ///
+    pub fn load_table_info(&self, cstr: impl AsRef<CStr>) -> Result<(), Error> {
+        unsafe {
+            let code = taos_load_table_info(self.conn, cstr.as_ref().as_ptr());
+            let code: TaosCode = (code & 0x0000ffff).into();
+            if !code.success() {
+                Err(TaosError {
+                    code,
+                    err: Cow::from("load table info error"),
+                }.into())
+            } else {
+                Ok(())
+            }
+        }
+    }
+
     pub fn as_raw(&self) -> *mut TAOS {
         self.conn
     }
