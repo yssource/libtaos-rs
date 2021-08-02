@@ -657,6 +657,13 @@ extern "C" {
         name: *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int;
 }
+
+extern "C" {
+    pub fn taos_stmt_set_sub_tbname(
+        stmt: *mut TAOS_STMT,
+        name: *const ::std::os::raw::c_char,
+    ) -> ::std::os::raw::c_int;
+}
 extern "C" {
     pub fn taos_stmt_is_insert(
         stmt: *mut TAOS_STMT,

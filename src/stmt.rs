@@ -115,6 +115,12 @@ impl Stmt {
             self.err_or(res)
         }
     }
+    pub fn set_sub_tbname(&mut self, tbname: impl ToCString) -> Result<(), TaosError> {
+        unsafe {
+            let res = taos_stmt_set_sub_tbname(self.stmt, tbname.to_c_string().as_ptr());
+            self.err_or(res)
+        }
+    }
     pub fn is_insert(&self) -> bool {
         unsafe {
             let mut res = 0;
