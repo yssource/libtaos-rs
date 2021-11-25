@@ -97,9 +97,9 @@ impl Stmt {
     pub fn set_tbname_tags(
         &mut self,
         tbname: impl ToCString,
-        tags: &[BindParam],
+        tags: impl IntoParams,
     ) -> Result<(), TaosError> {
-        // let tags = tags.into_params();
+        let tags = tags.into_params();
         unsafe {
             let res = taos_stmt_set_tbname_tags(
                 self.stmt,
@@ -358,36 +358,36 @@ mod test {
 
         let mut stmt = taos.stmt("insert into ? using stb tags(?) values(now,?)")?;
 
-        stmt.set_tbname_tags("tb0", [0])?;
-        stmt.bind(&[0])?;
+        stmt.set_tbname_tags("tb0", [0i32])?;
+        stmt.bind(&[0i32])?;
         assert!(stmt.is_insert());
         assert_eq!(stmt.num_params(), 1);
 
-        stmt.set_tbname_tags("tb1", &[1])?;
-        stmt.bind(&[&1])?;
+        stmt.set_tbname_tags("tb1", &[1i32])?;
+        stmt.bind(&[&1i32])?;
 
-        stmt.set_tbname_tags("tb2", &[2])?;
-        stmt.bind([&2])?;
+        stmt.set_tbname_tags("tb2", &[2i32])?;
+        stmt.bind([&2i32])?;
 
-        stmt.set_tbname_tags("tb3", &[3])?;
+        stmt.set_tbname_tags("tb3", &[3i32])?;
         stmt.bind([3i32])?;
 
-        stmt.set_tbname_tags("tb4", &[4])?;
+        stmt.set_tbname_tags("tb4", &[4i32])?;
         stmt.bind([Field::Int(4)])?;
 
-        stmt.set_tbname_tags("tb5", &[5])?;
+        stmt.set_tbname_tags("tb5", &[5i32])?;
         stmt.bind([&Field::Int(5)])?;
 
-        stmt.set_tbname_tags("tb6", &[6])?;
+        stmt.set_tbname_tags("tb6", &[6i32])?;
         stmt.bind(&[Field::Int(6)])?;
 
-        stmt.set_tbname_tags("tb7", &[7])?;
+        stmt.set_tbname_tags("tb7", &[7i32])?;
         stmt.bind(&[&Field::Int(5)])?;
 
-        stmt.set_tbname_tags("tb8", &[8])?;
+        stmt.set_tbname_tags("tb8", &[8i32])?;
         stmt.bind(vec![Field::Int(8)])?;
 
-        stmt.set_tbname_tags("tb9", [9])?;
+        stmt.set_tbname_tags("tb9", &[9i32])?;
         stmt.bind(vec![&Field::Int(9)])?;
 
         let _ = stmt.execute()?;

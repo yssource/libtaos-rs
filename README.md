@@ -1,5 +1,7 @@
 # libtaos - yet another TDengine connector for Rust
 
+![Crates.io](https://img.shields.io/crates/v/libtaos) ![Crates.io](https://img.shields.io/crates/d/libtaos)
+
 Thanks [@songtianyi](https://github.com/songtianyi) for [libtdengine](https://github.com/songtianyi/tdengine-rust-bindings) - a rust bindings project for [TDengine].
 
 It's an new design for [TDengine] rust client based on C interface or the REST API. It'll will provide Rust-like APIs and all rust things (like async/stream/iterators and others).
