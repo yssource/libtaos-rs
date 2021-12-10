@@ -347,7 +347,7 @@ mod test {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
             .replace("::", "_");
-        println!("{}", db);
+        println!("{:?}", db);
         let taos = taos()?;
         taos.exec(format!("drop database if exists {}", db)).await?;
         taos.exec(format!("create database if not exists {} keep 36500", db))
@@ -356,43 +356,26 @@ mod test {
         taos.exec("create table if not exists stb (ts timestamp, n int) tags(b int)")
             .await?;
 
-        let mut stmt = taos.stmt("insert into ? using stb tags(?) values(now,?)")?;
+        let mut stmt = taos.stmt("insert into ? using stb tags(?) values(?, ?)")?;
 
         stmt.set_tbname_tags("tb0", [0i32])?;
-        stmt.bind(&[0i32])?;
+        // stmt.bind(&[0i32])?;
+        let values = vec![Field::Timestamp(Timestamp::now()), Field::Int(10)];
+        stmt.bind(&values)?;
+
         assert!(stmt.is_insert());
-        assert_eq!(stmt.num_params(), 1);
-
-        stmt.set_tbname_tags("tb1", &[1i32])?;
-        stmt.bind(&[&1i32])?;
-
-        stmt.set_tbname_tags("tb2", &[2i32])?;
-        stmt.bind([&2i32])?;
-
-        stmt.set_tbname_tags("tb3", &[3i32])?;
-        stmt.bind([3i32])?;
-
-        stmt.set_tbname_tags("tb4", &[4i32])?;
-        stmt.bind([Field::Int(4)])?;
-
-        stmt.set_tbname_tags("tb5", &[5i32])?;
-        stmt.bind([&Field::Int(5)])?;
-
-        stmt.set_tbname_tags("tb6", &[6i32])?;
-        stmt.bind(&[Field::Int(6)])?;
-
-        stmt.set_tbname_tags("tb7", &[7i32])?;
-        stmt.bind(&[&Field::Int(5)])?;
-
-        stmt.set_tbname_tags("tb8", &[8i32])?;
-        stmt.bind(vec![Field::Int(8)])?;
-
-        stmt.set_tbname_tags("tb9", &[9i32])?;
-        stmt.bind(vec![&Field::Int(9)])?;
+        assert_eq!(stmt.num_params(), 2);
 
         let _ = stmt.execute()?;
+        const LIMIT: i64 = 100;
+
+        for i in 1..LIMIT {
+            stmt.set_tbname_tags(format!("tb{}", i), &[2i32])?;
+            stmt.bind(&values)?;
+        }
+        let _ = stmt.execute()?;
         let res = taos.query("select count(*) as count from stb").await?;
-        assert_eq!(res.rows[0][0], Field::BigInt(10));
+        assert_eq!(res.rows[0][0], Field::BigInt(LIMIT));
         taos.exec(format!("drop database {}", db)).await?;
         Ok(())
     }
