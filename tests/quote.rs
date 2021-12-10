@@ -7,10 +7,10 @@ async fn double_quote() -> Result<(), Error> {
     init::init();
     let taos = init::taos().unwrap();
     let _ = taos
-        .exec("create database if not exists test")
+        .exec("create database if not exists test_rust_double_quote_tag")
         .await
         .unwrap();
-    let _ = taos.use_database("test").await?;
+    let _ = taos.use_database("test_rust_double_quote_tag").await?;
     let _ = taos.exec("drop stable if exists stb1").await?;
     let _ = taos
         .exec("create stable if not exists stb1 (ts timestamp, t double) tags (tag1 binary(100))")

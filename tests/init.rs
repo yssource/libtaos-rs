@@ -1,6 +1,7 @@
 use libtaos::*;
 use std::env::var;
 
+#[cfg(test)]
 pub fn init() {
     std::env::set_var("RUST_LOG", "libtaos=trace");
     env_logger::init();

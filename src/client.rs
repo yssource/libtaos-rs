@@ -43,6 +43,9 @@ impl Taos {
             *n += 1;
         }
         unsafe {
+            taos_options(TSDB_OPTION_TSDB_OPTION_CHARSET, "UTF-8".to_c_string().as_ptr() as _);
+        }
+        unsafe {
             let conn = taos_connect(
                 ip.as_ptr(),
                 user.as_ptr(),
@@ -115,9 +118,9 @@ impl Taos {
 
     /// Warmup table metadata cache with a list of table name, separated by comma.
     ///
-    /// ```rust,no_run
+    /// ```ignore
     /// let tables = CString::new("table1,table2");
-    /// taos.load_table_info(&tables)?;
+    /// taos.load_table_info(&tables).unwrap();
     /// ```
     ///
     pub fn load_table_info(&self, cstr: impl AsRef<CStr>) -> Result<(), Error> {
