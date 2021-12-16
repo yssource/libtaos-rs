@@ -9,6 +9,16 @@ use proc_test_catalog::test_catalogue;
 /// Simple test, only use first line as test case description.
 ///
 /// Long description
-fn simple_test() {
+fn test_catalogue_simple() {
     println!("ok");
+}
+
+#[test]
+#[test_catalogue()]
+/// Simple test, only use first line as test case description.
+///
+/// Long description
+fn test_catalogue_with_result() -> Result<(), ()> {
+    println!("ok");
+    Ok(())
 }

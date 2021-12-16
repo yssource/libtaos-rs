@@ -43,9 +43,7 @@ fn fn_description(item: TokenStream) -> String {
                 }
 
                 match &tokens[0..3] {
-                    [TokenTree::Ident(_ident), TokenTree::Punct(_punct), TokenTree::Literal(literal)]
-                         =>
-                    {
+                    [TokenTree::Ident(_), TokenTree::Punct(_), TokenTree::Literal(literal)] => {
                         let description = literal.to_string().trim_matches('"').trim().to_string();
                         if description.is_empty() {
                             None
@@ -56,7 +54,7 @@ fn fn_description(item: TokenStream) -> String {
                     _ => {
                         dbg!(tokens);
                         None
-                    },
+                    }
                 }
             }
             _ => None,
@@ -73,8 +71,8 @@ fn source_file() -> PathBuf {
 
 fn rewrite_test_case(item: TokenStream) -> TokenStream {
     let source_file = source_file();
-    let source_file = source_file.display();
-    let fn_name = fn_name(item.clone());
+    let source_file = source_file.display().to_string();
+    let fn_name = fn_name(item.clone()).to_string();
     let mut tokens: Vec<_> = item.into_iter().collect();
     let last = tokens.len() - 1;
     let code = tokens.swap_remove(last);
@@ -83,20 +81,19 @@ fn rewrite_test_case(item: TokenStream) -> TokenStream {
         TokenTree::Group(group) => {
             let delimiter = group.delimiter();
             let stream = group.stream();
-            let case: TokenStream = format!(
-                "let _case_ = test_catalog::CaseIdentity::new(\"{}\", \"{}\");
-                let _now_ = std::time::Instant::now();",
-                source_file, fn_name
-            )
-            .parse()
-            .unwrap();
-            let pre: TokenStream = format!("test_catalog::pre(&_case_);").parse().unwrap();
-            let post: TokenStream = format!(
-                "let _elapsed_ = _now_.elapsed(); test_catalog::post(&_case_, &_elapsed_);"
-            )
-            .parse()
-            .unwrap();
-            let new_stream = TokenStream::from_iter([case, pre, stream, post]);
+
+            let new_stream = quote! {
+                let _case_ = test_catalog::CaseIdentity::new(#source_file, #fn_name);
+                test_catalog::pre(&_case_);
+                let _now_ = std::time::Instant::now();
+                let _result_ = {
+                    #stream
+                };
+                let _elapsed_ = _now_.elapsed();
+                test_catalog::post(&_case_, &_elapsed_);
+                _result_
+            };
+
             let group = Group::new(delimiter, new_stream);
             let tree = TokenTree::Group(group);
             tokens.push(tree);
@@ -115,8 +112,25 @@ pub fn test_catalogue(
     test_catalog::init();
     let span = proc_macro::Span::call_site();
     let file = span.source_file().path();
-    let line_min = span.start();
-    let line_max = span.end();
+    let (line_start, line_end) = attr
+        .clone()
+        .into_iter()
+        .chain(item.clone().into_iter())
+        .map(|token| {
+            let span = token.span();
+            (span.start().line, span.end().line)
+        })
+        .reduce(|mut acc, item |{
+            if item.0 < acc.0 {
+                acc.0 = item.0;
+            }
+            if item.1 > acc.1 {
+                acc.1 = item.1;
+            }
+            acc
+        })
+        .unwrap();
+    dbg!(line_start, line_end);
 
     let tokens = TokenStream::from(attr)
         .into_iter()
@@ -157,25 +171,22 @@ pub fn test_catalogue(
             _ => (),
         }
     }
+    let item = rewrite_test_case(item.clone());
 
     test_catalog::catalogue(
         &file.display().to_string(),
         &name.to_string(),
-        line_min.line,
-        line_max.line,
+        line_start,
+        line_end,
         &description,
         &since,
         &compatible_version,
     );
-
-    let item = rewrite_test_case(item.clone());
 
     let ret: TokenStream = quote_spanned! {
         proc_macro2::Span::call_site() =>
         #item
     }
     .into();
-
-    dbg!(format!("{}", ret));
     ret.into()
 }

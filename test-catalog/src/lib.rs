@@ -73,8 +73,9 @@ lazy_static! {
 static INIT: Once = Once::new();
 pub fn init() {
     INIT.call_once(|| {
-        let path = std::env::var("CARGO_MANIFEST_DIR").unwrap().to_string();
-        let path = std::path::PathBuf::from(path)
+        let project_root = project_root::get_project_root().expect("can not find project root");
+        // let path = std::env::var("CARGO_MANIFEST_DIR").unwrap().to_string();
+        let path = project_root
             .join("target")
             .join("test-catalog");
         std::fs::create_dir_all(&path).expect("cannot create dir for tests catalog");
@@ -88,17 +89,17 @@ pub fn init() {
 pub fn catalogue(
     file: &str,
     name: &str,
-    line_min: usize,
-    line_max: usize,
+    line_start: usize,
+    line_end: usize,
     description: &str,
     since: &str,
     compatible_version: &str,
 ) {
-    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let project_root = dbg!(project_root::get_project_root().expect("can not find project root"));
+    // let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    let project_root = project_root::get_project_root().expect("can not find project root");
     let repo = git2::Repository::open(project_root).unwrap();
     let mut blame_options = git2::BlameOptions::default();
-    blame_options.min_line(line_min).max_line(line_max);
+    blame_options.min_line(line_start).max_line(line_end).track_copies_any_commit_copies(true);
     let version = std::env::var("CARGO_PKG_VERSION").unwrap().to_string();
     let blame = repo
         .blame_file(Path::new(dbg!(file)), Some(&mut blame_options))
@@ -113,6 +114,7 @@ pub fn catalogue(
                 let orig_committer = chunk.orig_signature().to_string();
                 let created_at = chunk.orig_signature().when().seconds();
                 let last_committed_at = chunk.final_signature().when().seconds();
+                println!("- {}", created_at);
                 (
                     created_at,
                     orig_committer,
@@ -158,7 +160,7 @@ pub fn catalogue(
             last_commit_id = excluded.last_commit_id,
             last_committer = excluded.last_committer,
             last_committed_at = excluded.last_committed_at",
-            params![version, file, line_min, line_max, name, description, since, compatible_version, authors.join(","),
+            params![version, file, line_start, line_end, name, description, since, compatible_version, authors.join(","),
                 created_at, last_commit_id, last_committer, last_committed_at]).unwrap();
     }
 }
