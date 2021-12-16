@@ -130,7 +130,6 @@ pub fn test_catalogue(
             acc
         })
         .unwrap();
-    dbg!(line_start, line_end);
 
     let tokens = TokenStream::from(attr)
         .into_iter()

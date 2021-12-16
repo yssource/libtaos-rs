@@ -75,9 +75,7 @@ pub fn init() {
     INIT.call_once(|| {
         let project_root = project_root::get_project_root().expect("can not find project root");
         // let path = std::env::var("CARGO_MANIFEST_DIR").unwrap().to_string();
-        let path = project_root
-            .join("target")
-            .join("test-catalog");
+        let path = project_root.join("target").join("test-catalog");
         std::fs::create_dir_all(&path).expect("cannot create dir for tests catalog");
         let file = path.join("catalog.db");
         let catalogger = Cataloger::open(file).expect("cannot open");
@@ -99,10 +97,13 @@ pub fn catalogue(
     let project_root = project_root::get_project_root().expect("can not find project root");
     let repo = git2::Repository::open(project_root).unwrap();
     let mut blame_options = git2::BlameOptions::default();
-    blame_options.min_line(line_start).max_line(line_end).track_copies_any_commit_copies(true);
+    blame_options
+        .min_line(line_start)
+        .max_line(line_end)
+        .track_copies_any_commit_copies(true);
     let version = std::env::var("CARGO_PKG_VERSION").unwrap().to_string();
     let blame = repo
-        .blame_file(Path::new(dbg!(file)), Some(&mut blame_options))
+        .blame_file(Path::new(file), Some(&mut blame_options))
         .expect("blame");
     if let (Some(created_at), authors, last_commit_id, last_committer, Some(last_committed_at)) =
         blame
@@ -114,7 +115,6 @@ pub fn catalogue(
                 let orig_committer = chunk.orig_signature().to_string();
                 let created_at = chunk.orig_signature().when().seconds();
                 let last_committed_at = chunk.final_signature().when().seconds();
-                println!("- {}", created_at);
                 (
                     created_at,
                     orig_committer,

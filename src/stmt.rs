@@ -159,6 +159,7 @@ impl Taos {
 mod test {
     use crate::test::taos;
     use crate::*;
+    use proc_test_catalog::test_catalogue;
 
     async fn stmt_test(db: &str, ty: &str, value: Field) -> Result<(), Error> {
         let taos = taos()?;
@@ -185,6 +186,8 @@ mod test {
         Ok(())
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT when bool = null.
     async fn bool_null() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -192,6 +195,8 @@ mod test {
         stmt_test(&db, "bool", Field::Null).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT when int value is null
     async fn int_null() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -199,6 +204,8 @@ mod test {
         stmt_test(&db, "int", Field::Null).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT when float is null
     async fn float_null() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -206,6 +213,8 @@ mod test {
         stmt_test(&db, "float", Field::Null).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with bool values.
     async fn bool() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -213,6 +222,8 @@ mod test {
         stmt_test(&db, "bool", Field::Bool(true)).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with tiny int values.
     async fn tinyint() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -220,6 +231,8 @@ mod test {
         stmt_test(&db, "tinyint", Field::TinyInt(-0x7f)).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with small int values.
     async fn smallint() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -227,6 +240,8 @@ mod test {
         stmt_test(&db, "smallint", Field::SmallInt(0x7fff)).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with int values.
     async fn int() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -234,6 +249,8 @@ mod test {
         stmt_test(&db, "int", Field::Int(0x7fffffff)).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with bigint values.
     async fn bigint() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -241,6 +258,8 @@ mod test {
         stmt_test(&db, "bigint", Field::BigInt(0x7fffffff_ffffffff)).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with unsigned tinyint values.
     async fn utinyint() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -248,6 +267,8 @@ mod test {
         stmt_test(&db, "tinyint unsigned", Field::UTinyInt(0)).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with unsigned smallint values.
     async fn usmallint() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -255,6 +276,8 @@ mod test {
         stmt_test(&db, "smallint unsigned", Field::USmallInt(1)).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with unsigned int values.
     async fn uint() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -262,6 +285,8 @@ mod test {
         stmt_test(&db, "int unsigned", Field::UInt(1)).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with unsigned bigint values.
     async fn ubigint() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -269,6 +294,8 @@ mod test {
         stmt_test(&db, "bigint unsigned", Field::UBigInt(1)).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with float values.
     async fn float() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -276,6 +303,8 @@ mod test {
         stmt_test(&db, "float", Field::Float(1.0)).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with double values.
     async fn double() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -283,6 +312,8 @@ mod test {
         stmt_test(&db, "double", Field::Double(1.0)).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with binary values.
     async fn binary() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -291,6 +322,8 @@ mod test {
         stmt_test(&db, "binary(10)", v).await
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with nchar(unicode) values.
     async fn nchar() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
@@ -300,6 +333,8 @@ mod test {
     }
 
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with all types of values.
     async fn all_types() -> Result<(), Error> {
         let taos = taos()?;
         let db = stdext::function_name!()
@@ -343,6 +378,8 @@ mod test {
         Ok(())
     }
     #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT API insertion with tags
     async fn test_stmt_tags() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")
