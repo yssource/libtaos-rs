@@ -1,0 +1,12 @@
+[package]
+name = "test-catalog"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rusqlite = { version = "0.26.3", features = ["bundled"] }
+lazy_static = "1.4.0"
+git2 = "0.13.25"
+project-root = "0.2.2"
