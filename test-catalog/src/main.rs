@@ -12,7 +12,7 @@ enum Format {
     Csv,
     Json,
 }
-/// Simple program to greet a person
+/// Export test catalog to different file formats
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
 struct Args {
@@ -20,7 +20,7 @@ struct Args {
     #[clap(short, long)]
     manifest: Option<String>,
 
-    /// Number of times to greet
+    /// Select file formats
     #[clap(short, long, arg_enum, default_value = "markdown")]
     format: Format,
 }
