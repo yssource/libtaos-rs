@@ -11,7 +11,7 @@ quote = "1.0"
 syn = "1.0"
 git2 = "0.13.25"
 itertools = "0.10.3"
-test-catalog = {path = "../test-catalog"}
+test-catalog = {path = "../test-catalog", version = "0.1.0"}
 
 [lib]
 proc-macro = true
