@@ -8,6 +8,7 @@ use test_catalog::{Case, Cataloger, Result};
 enum Format {
     ///
     Markdown,
+    Confluence,
     Tsv,
     Csv,
     Json,
@@ -42,6 +43,12 @@ fn main() -> Result<()> {
             );
             for case in cases {
                 println!("{}", case.into_printable_fields().join("|"));
+            }
+        }
+        Format::Confluence => {
+            println!("|| {} ||", names.join(" || "));
+            for case in cases {
+                println!("| {} |", case.into_printable_fields().join(" | "));
             }
         }
         Format::Tsv => {
