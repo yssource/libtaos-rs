@@ -7,7 +7,7 @@ First, install `test-catalog` binary with `cargo install test-catalog`.
 To use the test catalog specification, please add the dependencies to Cargo manifest file (Cargo.toml):
 
 ```toml
-[dev-dependecies]
+[dev-dependencies]
 proc-test-catalog = "0.1.0"
 test-catalog = "0.1.0"
 ```
