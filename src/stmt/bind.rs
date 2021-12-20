@@ -88,6 +88,8 @@ macro_rules! _impl_primitive_into_bind_param {
         }
         paste! {
         #[test]
+        #[proc_test_catalog::test_catalogue]
+        #[doc = "Test bind param for type: " $ty " => " $target]
         fn [<test_ $ty:snake>]() {
             let v: $ty = $v;
             let p = v.into_bind_param();

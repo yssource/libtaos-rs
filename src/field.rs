@@ -337,6 +337,8 @@ mod test {
     use crate::*;
 
     #[tokio::test]
+    #[proc_test_catalog::test_catalogue]
+    /// Test describe sql
     async fn test_describe() -> Result<(), Error> {
         let db = stdext::function_name!()
             .replace("::{{closure}}", "")

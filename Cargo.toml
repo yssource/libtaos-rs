@@ -1,3 +1,9 @@
+[workspace]
+members = [
+  "test-catalog",
+  "proc-test-catalog"
+]
+
 [package]
 authors = ["Linhe Huo <linhehuo@gmail.com>"]
 edition = "2018"
@@ -32,6 +38,8 @@ bindgen = { version = "0.58.1", optional = true }
 [dev-dependencies]
 env_logger = "0.8.3"
 tokio = {version = "1.5.0", features = ["rt", "macros", "rt-multi-thread"]}
+proc-test-catalog = { path = "./proc-test-catalog", version = "0.1.0" }
+test-catalog = { path = "./test-catalog", version = "0.1.0" }
 
 [features]
 default = ["stmt", "cleanup"]
