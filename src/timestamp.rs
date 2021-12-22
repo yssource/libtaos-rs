@@ -51,7 +51,7 @@ impl Timestamp {
         match self.timestamp {
             ts if ts > 0 => SystemTime::UNIX_EPOCH.checked_add(duration).unwrap(),
             0 => SystemTime::UNIX_EPOCH,
-            _ => SystemTime::UNIX_EPOCH.checked_sub(duration).unwrap()
+            _ => SystemTime::UNIX_EPOCH.checked_sub(duration).unwrap(),
         }
     }
 

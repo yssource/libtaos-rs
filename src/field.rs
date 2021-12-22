@@ -118,6 +118,7 @@ pub enum TaosDataType {
     USmallInt, // 12
     UInt,      // 13
     UBigInt,   // 14
+    Json,      // 15
     #[num_enum(default)]
     Unknown = 255,
 }
@@ -139,6 +140,7 @@ pub enum Field {
     USmallInt(u16),
     UInt(u32),
     UBigInt(u64), // 14
+    Json(serde_json::Value),
 }
 
 impl fmt::Display for Field {
@@ -159,6 +161,7 @@ impl fmt::Display for Field {
             Field::USmallInt(v) => write!(f, "{}", v),
             Field::UInt(v) => write!(f, "{}", v),
             Field::UBigInt(v) => write!(f, "{}", v),
+            Field::Json(v) => write!(f, "{}", v),
         }
     }
 }
@@ -264,6 +267,13 @@ impl Field {
         }
     }
 
+    pub fn as_json(&self) -> Option<&serde_json::Value> {
+        match self {
+            Field::Json(v) => Some(v),
+            _ => None,
+        }
+    }
+
     pub fn data_type(&self) -> TaosDataType {
         match self {
             Field::Null => TaosDataType::Null,
@@ -281,6 +291,7 @@ impl Field {
             Field::USmallInt(_v) => TaosDataType::USmallInt,
             Field::UInt(_v) => TaosDataType::UInt,
             Field::UBigInt(_v) => TaosDataType::UBigInt,
+            Field::Json(_v) => TaosDataType::Json,
         }
     }
 }
@@ -319,6 +330,7 @@ _impl_primitive_type!(f32, Float, 0.);
 _impl_primitive_type!(f64, Double, 0.);
 _impl_primitive_type!(BString, Binary, "A".into());
 _impl_primitive_type!(String, NChar, "A".into());
+// _impl_primitive_type!(serde_json::Value, Json, );
 
 impl IntoField for &BStr {
     fn into_field(self) -> Field {

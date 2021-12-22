@@ -120,7 +120,7 @@ pub fn test_catalogue(
             let span = token.span();
             (span.start().line, span.end().line)
         })
-        .reduce(|mut acc, item |{
+        .reduce(|mut acc, item| {
             if item.0 < acc.0 {
                 acc.0 = item.0;
             }
