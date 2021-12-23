@@ -7,7 +7,7 @@ use paste::paste;
 
 use std::os::raw::{c_int, c_void};
 use std::ptr;
-use std::{time::SystemTime};
+use std::time::SystemTime;
 
 pub type BindParam = TAOS_BIND;
 
@@ -49,7 +49,7 @@ impl BindParam {
     }
     pub(crate) unsafe fn free(&mut self) {
         if !self.buffer.is_null() {
-            Box::from_raw(self.buffer);
+            Vec::from_raw_parts(self.buffer as _, *self.length, *self.length);
         }
         if !self.length.is_null() {
             Box::from_raw(self.length);
@@ -273,6 +273,23 @@ impl IntoBindParam for &Timestamp {
 }
 _impl_ref_into_bind_param!(Timestamp);
 
+impl IntoBindParam for &serde_json::Value {
+    fn into_bind_param(self) -> BindParam {
+        let mut param = BindParam::new(TaosDataType::Json);
+
+        let data = serde_json::to_vec(self).expect("json to u8 vector");
+        param.buffer_length = data.len();
+
+        param.buffer = data.as_ptr() as _;
+        std::mem::forget(data);
+
+        let l = Box::new(param.buffer_length);
+        param.length = Box::into_raw(l) as _;
+        param
+    }
+}
+_impl_ref_into_bind_param!(serde_json::Value);
+
 impl IntoBindParam for &Field {
     fn into_bind_param(self) -> BindParam {
         match self {
@@ -291,6 +308,7 @@ impl IntoBindParam for &Field {
             Field::Double(v) => v.into_bind_param(),
             Field::Binary(v) => v.into_bind_param(),
             Field::NChar(v) => v.into_bind_param(),
+            Field::Json(v) => v.into_bind_param(),
         }
     }
 }

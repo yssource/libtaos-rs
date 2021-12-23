@@ -185,33 +185,36 @@ mod test {
         taos.exec(format!("drop database {}", db)).await?;
         Ok(())
     }
-    #[tokio::test]
-    #[test_catalogue()]
-    /// Test STMT when bool = null.
-    async fn bool_null() -> Result<(), Error> {
-        let db = stdext::function_name!()
-            .replace("::{{closure}}", "")
-            .replace("::", "_");
-        stmt_test(&db, "bool", Field::Null).await
+
+    macro_rules! _test_column_null {
+        ($ty:ty, $v:expr) => {
+            paste::paste! {
+                #[tokio::test]
+                #[test_catalogue()]
+                #[doc = "Test bind null to type " $ty]
+                async fn [<null_ $ty:snake>]() -> Result<(), Error> {
+                    let db = stdext::function_name!()
+                        .replace("::{{closure}}", "")
+                        .replace("::", "_");
+                    stmt_test(&db, $v, Field::Null).await
+                }
+            }
+        };
     }
-    #[tokio::test]
-    #[test_catalogue()]
-    /// Test STMT when int value is null
-    async fn int_null() -> Result<(), Error> {
-        let db = stdext::function_name!()
-            .replace("::{{closure}}", "")
-            .replace("::", "_");
-        stmt_test(&db, "int", Field::Null).await
-    }
-    #[tokio::test]
-    #[test_catalogue()]
-    /// Test STMT when float is null
-    async fn float_null() -> Result<(), Error> {
-        let db = stdext::function_name!()
-            .replace("::{{closure}}", "")
-            .replace("::", "_");
-        stmt_test(&db, "float", Field::Null).await
-    }
+    _test_column_null!(bool, "bool");
+    _test_column_null!(tinyint, "tinyint");
+    _test_column_null!(smallint, "smallint");
+    _test_column_null!(int, "int");
+    _test_column_null!(bigint, "bigint");
+    _test_column_null!(utinyint, "tinyint unsigned");
+    _test_column_null!(usmallint, "smallint unsigned");
+    _test_column_null!(uint, "int unsigned");
+    _test_column_null!(ubigint, "bigint unsigned");
+    _test_column_null!(timestamp, "timestamp");
+    _test_column_null!(float, "float");
+    _test_column_null!(double, "double");
+    _test_column_null!(binary, "binary(10)");
+    _test_column_null!(nchar, "nchar(10)");
     #[tokio::test]
     #[test_catalogue()]
     /// Test STMT inserting with bool values.
@@ -330,6 +333,38 @@ mod test {
             .replace("::", "_");
         let v = Field::NChar("一二三四五六七八九十".into());
         stmt_test(&db, "nchar(10)", v).await
+    }
+    #[tokio::test]
+    #[test_catalogue()]
+    /// Test STMT inserting with json values.
+    async fn json() -> Result<(), Error> {
+        let db = stdext::function_name!()
+            .replace("::{{closure}}", "")
+            .replace("::", "_");
+        let v = Field::Json(serde_json::from_str("{\"tag1\":\"一二三四五六七八九十\"}").unwrap());
+
+        let taos = taos()?;
+        println!("test json using {}", db);
+        taos.exec(format!("drop database if exists {}", db)).await?;
+        taos.exec(format!("create database if not exists {} keep 36500", db))
+            .await?;
+        taos.exec(format!("use {}", db)).await?;
+        taos.exec("create stable if not exists stb0 (ts timestamp, n int) tags(j json)")
+            .await?;
+        let mut stmt = taos.stmt("insert into ? using stb0 tags(?) values(?,?)")?;
+        println!("set tbname with tags");
+        stmt.set_tbname_tags("tb0", [&v])?;
+        println!("bind values");
+        assert!(stmt.is_insert());
+        assert_eq!(stmt.num_params(), 2);
+        let ts = Field::Timestamp(Timestamp::now());
+        stmt.bind(vec![ts, Field::Int(3)].iter())?;
+        let _ = stmt.execute()?;
+        let res = taos.query("select j from stb0").await?;
+        let row = res.rows.iter().next().unwrap();
+        assert_eq!(&v, row.iter().next().unwrap());
+        taos.exec(format!("drop database {}", db)).await?;
+        Ok(())
     }
 
     #[tokio::test]
