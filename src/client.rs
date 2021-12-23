@@ -306,14 +306,11 @@ mod test {
         taos.exec(format!("create database if not exists {} keep 36500", db))
             .await?;
         taos.exec(format!("use {}", db)).await?;
-        // create stable stb1 (ts timestamp, name binary(10)) tags(n int);
-        // insert into tb3 using stb1 tags(3) values(now, 'db02');
-        // insert into tb4 using stb1 tags(4) values(now, 'db3');
         taos.exec("create stable stb1 (ts timestamp, name binary(10)) tags(n int)")
             .await?;
         taos.exec("insert into tb1 using stb1 tags(1) values(now, 'db02');")
             .await?;
-        taos.exec("insert into tb1 using stb1 tags(1) values(now, 'db3');")
+        taos.exec("insert into tb2 using stb1 tags(2) values(now, 'db3');")
             .await?;
         let res = taos.query("select distinct(name) from stb1;").await?;
         assert_eq!(res.rows[0][0], Field::Binary("db3".into()));
@@ -332,17 +329,14 @@ mod test {
         taos.exec(format!("create database if not exists {} keep 36500", db))
             .await?;
         taos.exec(format!("use {}", db)).await?;
-        // create stable stb1 (ts timestamp, name nchar(10)) tags(n int);
-        // insert into tb3 using stb1 tags(3) values(now, 'db02');
-        // insert into tb4 using stb1 tags(4) values(now, 'db3');
         taos.exec("create stable stb1 (ts timestamp, name nchar(10)) tags(n int)")
             .await?;
         taos.exec("insert into tb1 using stb1 tags(1) values(now, 'db02');")
             .await?;
-        taos.exec("insert into tb1 using stb1 tags(1) values(now, 'db3');")
+        taos.exec("insert into tb2 using stb1 tags(2) values(now, 'db3');")
             .await?;
         let res = taos.query("select distinct(name) from stb1;").await?;
-        assert_eq!(res.rows[0][0], Field::NChar("db3".into()));
+        assert_eq!(dbg!(res).rows[0][0], Field::NChar("db3".into()));
         taos.exec(format!("drop database {}", db)).await?;
         Ok(())
     }
@@ -705,6 +699,8 @@ mod test {
             11
         );
         query_assert_rows!("select ts,tbname,jtag->'tag1' from (select jtag->'tag1',tbname,ts from jsons1 order by ts)", 11);
+
+        exec_ok!(format!("drop database {}", db));
         Ok(())
     }
 }
