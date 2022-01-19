@@ -414,6 +414,40 @@ mod test {
     }
     #[tokio::test]
     #[test_catalogue()]
+    /// Test STMT set tbname with upper-case stable, see jira TD-12977
+    async fn test_uppercase_tbname() -> Result<(), Error> {
+        let db = "uppercase_test";
+        let taos = taos()?;
+        taos.exec(format!("drop database if exists {db}")).await?;
+        taos.exec(format!("create database {db}")).await?;
+        taos.exec(format!("use {db}")).await?;
+        taos.exec(format!("create stable STB(ts timestamp, n int) tags(b int)")).await?;
+        let mut stmt = taos.stmt("insert into ? using STB tags(?) values(?, ?)")?;
+
+        stmt.set_tbname_tags("tb0", [0i32])?;
+        // stmt.bind(&[0i32])?;
+        let values = vec![Field::Timestamp(Timestamp::now()), Field::Int(10)];
+        stmt.bind(&values)?;
+
+        assert!(stmt.is_insert());
+        assert_eq!(stmt.num_params(), 2);
+
+        let _ = stmt.execute()?;
+        const LIMIT: i64 = 100;
+
+        for i in 1..LIMIT {
+            stmt.set_tbname_tags(format!("tb{}", i), &[2i32])?;
+            stmt.bind(&values)?;
+        }
+        let _ = stmt.execute()?;
+        let res = taos.query("select count(*) as count from stb").await?;
+        assert_eq!(res.rows[0][0], Field::BigInt(LIMIT));
+        taos.exec(format!("drop database {}", db)).await?;
+
+        Ok(())
+    }
+    #[tokio::test]
+    #[test_catalogue()]
     /// Test STMT API insertion with tags
     async fn test_stmt_tags() -> Result<(), Error> {
         let db = stdext::function_name!()
