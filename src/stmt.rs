@@ -215,6 +215,73 @@ mod test {
     _test_column_null!(double, "double");
     _test_column_null!(binary, "binary(10)");
     _test_column_null!(nchar, "nchar(10)");
+    #[should_panic]
+    #[tokio::test]
+    #[test_catalogue()]
+    /// Test bind null to json tag, should panic because json is not supported in cols
+    async fn null_json() -> () {
+        let db = stdext::function_name!()
+            .replace("::{{closure}}", "")
+            .replace("::", "_");
+        stmt_test(&db, "json", Field::Null).await.unwrap()
+    }
+
+    async fn stmt_tag(db: &str, ty: &str, tag: Field) -> Result<(), Error> {
+        let taos = taos()?;
+        println!("test {} using {}", ty, db);
+        taos.exec(format!("drop database if exists {}", db)).await?;
+        taos.exec(format!("create database if not exists {} keep 36500", db))
+            .await?;
+        taos.exec(format!("use {}", db)).await?;
+        taos.exec(format!(
+            "create table if not exists stb0 (ts timestamp, v int) tags (n {})",
+            ty
+        ))
+        .await?;
+        let mut stmt = taos.stmt("insert into ? using stb0 tags(?) values(?,?)")?;
+        stmt.set_tbname_tags("tb0", [&tag])?;
+        assert!(stmt.is_insert());
+        assert_eq!(stmt.num_params(), 2);
+        let ts = Field::Timestamp(Timestamp::now());
+        stmt.bind(vec![ts, Field::Null].iter())?;
+        let _ = stmt.execute()?;
+        let res = taos.query("select n from tb0").await?;
+        assert_eq!(tag, res.rows[0][0]);
+        taos.exec(format!("drop database {}", db)).await?;
+        Ok(())
+    }
+    macro_rules! _test_tag_null {
+        ($ty:ty, $v:expr) => {
+            paste::paste! {
+                #[tokio::test]
+                #[test_catalogue()]
+                #[doc = "Test bind null to type " $ty]
+                async fn [<null_tag_ $ty:snake>]() -> Result<(), Error> {
+                    let db = stdext::function_name!()
+                        .replace("::{{closure}}", "")
+                        .replace("::", "_")
+                        .replace("libtaos_", "");
+                    stmt_tag(&db, $v, Field::Null).await
+                }
+            }
+        };
+    }
+    _test_tag_null!(bool, "bool");
+    _test_tag_null!(tinyint, "tinyint");
+    _test_tag_null!(smallint, "smallint");
+    _test_tag_null!(int, "int");
+    _test_tag_null!(bigint, "bigint");
+    _test_tag_null!(utinyint, "tinyint unsigned");
+    _test_tag_null!(usmallint, "smallint unsigned");
+    _test_tag_null!(uint, "int unsigned");
+    _test_tag_null!(ubigint, "bigint unsigned");
+    _test_tag_null!(timestamp, "timestamp");
+    _test_tag_null!(float, "float");
+    _test_tag_null!(double, "double");
+    _test_tag_null!(binary, "binary(10)");
+    _test_tag_null!(nchar, "nchar(10)");
+    // set null in json tag is currently abort taosd. see TD-12452.
+    // _test_tag_null!(json, "json");
     #[tokio::test]
     #[test_catalogue()]
     /// Test STMT inserting with bool values.
