@@ -202,6 +202,12 @@ impl CTaosResult {
         }
     }
 
+    pub fn affected_rows(&self) -> i32 {
+        unsafe {
+            taos_affected_rows(self.res)
+        }
+    }
+
     pub fn fetch_fields(&self) -> TaosQueryData {
         let fields = unsafe { taos_fetch_fields(self.res) };
 

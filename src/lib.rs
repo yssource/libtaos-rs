@@ -34,6 +34,9 @@ pub use client::*;
 #[cfg(all(not(feature = "rest"), feature = "stmt"))]
 pub mod stmt;
 
+#[cfg(all(not(feature = "rest"), feature = "sml"))]
+pub mod sml;
+
 pub use error::*;
 pub use field::*;
 

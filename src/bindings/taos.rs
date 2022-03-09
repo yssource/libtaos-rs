@@ -863,3 +863,13 @@ extern "C" {
         tableNameList: *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int;
 }
+
+extern "C" {
+    pub fn taos_schemaless_insert(
+        taos: *mut TAOS,
+        lines: *mut *mut std::os::raw::c_char,
+        numLines: std::os::raw::c_int,
+        protocol: std::os::raw::c_int,
+        precision: std::os::raw::c_int,
+    ) -> *mut TAOS_RES;
+}

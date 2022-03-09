@@ -15,13 +15,14 @@ if you use the default features, it'll depend on:
 - [TDengine] Client library and headers.
 - clang because bindgen will requires the clang AST library.
 
-## Fetures
+## Features
 
 In-design features:
 
 - [x] API for both C interface
 - [x] REST API support by feature `rest`.
 - [x] [r2d2] Pool support by feature `r2d2`
+- [x] [Schemaless insert](https://www.taosdata.com/docs/cn/v2.0/insert#schemaless) support
 - [ ] Iterators for fields fetching
 - [ ] Stream support
 - [ ] Subscribe support
