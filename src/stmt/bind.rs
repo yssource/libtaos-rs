@@ -255,11 +255,7 @@ impl<Tz: chrono::TimeZone> IntoBindParam for &DateTime<Tz> {
         param
     }
 }
-impl<Tz: chrono::TimeZone> IntoBindParam for DateTime<Tz> {
-    fn into_bind_param(self) -> BindParam {
-        (&self).into_bind_param()
-    }
-}
+
 impl IntoBindParam for &Timestamp {
     fn into_bind_param(self) -> BindParam {
         let mut param = BindParam::new(TaosDataType::Timestamp);
