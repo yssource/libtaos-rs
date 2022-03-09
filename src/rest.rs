@@ -51,6 +51,9 @@ enum TaosQueryResponse {
 }
 
 fn value_to_field(from: &TaosQueryResponse, value: Value, meta: &ColumnMeta) -> Field {
+    if value.is_null() {
+        return Field::Null;
+    }
     match meta.type_ {
         TaosDataType::Null => Field::Null,
         TaosDataType::TinyInt => Field::TinyInt(
@@ -74,7 +77,7 @@ fn value_to_field(from: &TaosQueryResponse, value: Value, meta: &ColumnMeta) -> 
         TaosDataType::UTinyInt => Field::UTinyInt(
             value
                 .as_u64()
-                .expect("the column declared as usigned tinyint but not") as u8,
+                .expect("the column declared as unsigned tinyint but not") as u8,
         ),
         TaosDataType::USmallInt => Field::USmallInt(
             value
@@ -89,7 +92,7 @@ fn value_to_field(from: &TaosQueryResponse, value: Value, meta: &ColumnMeta) -> 
         TaosDataType::UBigInt => Field::UBigInt(
             value
                 .as_u64()
-                .expect("the column declared as usigned bigint but not") as u64,
+                .expect("the column declared as unsigned bigint but not") as u64,
         ),
         TaosDataType::Timestamp => Field::Timestamp(if value.is_i64() {
             Timestamp {
@@ -113,14 +116,14 @@ fn value_to_field(from: &TaosQueryResponse, value: Value, meta: &ColumnMeta) -> 
         ),
         TaosDataType::Binary => match value {
             Value::String(str) => Field::Binary(str.into()),
-            v => unreachable!(&format!(
+            v => unreachable!("{}", &format!(
                 "the column declared as binary but not: {:?}, from {:?}",
                 v, from
             )),
         },
         TaosDataType::NChar => match value {
             Value::String(str) => Field::NChar(str),
-            _ => unreachable!("the column declared as binary but not"),
+            _ => unreachable!("{}", "the column declared as binary but not"),
         },
         TaosDataType::Bool => Field::Bool(
             value
