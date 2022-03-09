@@ -202,6 +202,12 @@ impl CTaosResult {
         }
     }
 
+    pub fn affected_rows(&self) -> i32 {
+        unsafe {
+            taos_affected_rows(self.res)
+        }
+    }
+
     pub fn fetch_fields(&self) -> TaosQueryData {
         let fields = unsafe { taos_fetch_fields(self.res) };
 
@@ -226,9 +232,9 @@ impl CTaosResult {
             let lengths =
                 unsafe { std::slice::from_raw_parts(taos_fetch_lengths(self.res), fcount as _) };
             let row = unsafe { std::slice::from_raw_parts(taos_row, fcount as usize) }
-                .into_iter()
+                .iter()
                 .zip(fields.iter())
-                .zip(lengths.into_iter())
+                .zip(lengths.iter())
                 .map(|((ptr, meta), length)| unsafe {
                     if ptr.is_null() {
                         return Field::Null;
@@ -261,14 +267,13 @@ impl CTaosResult {
                         }
                         TaosDataType::Json => {
                             let slice = std::slice::from_raw_parts((*ptr) as *mut u8, *length as _);
-                            let res = serde_json::from_slice(slice)
+                            serde_json::from_slice(slice)
                                 .ok()
-                                .map(|v| Field::Json(v))
-                                .unwrap_or(Field::Null);
-                            res
+                                .map(Field::Json)
+                                .unwrap_or(Field::Null)
                         }
                         _ => {
-                            unreachable!("unexpected data type, please contract the author to fix!")
+                            unreachable!("unexpected data type, please contact the author to fix!")
                         }
                     }
                 })

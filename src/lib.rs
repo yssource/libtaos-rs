@@ -34,6 +34,9 @@ pub use client::*;
 #[cfg(all(not(feature = "rest"), feature = "stmt"))]
 pub mod stmt;
 
+#[cfg(all(not(feature = "rest"), feature = "schemaless"))]
+pub mod schemaless;
+
 pub use error::*;
 pub use field::*;
 

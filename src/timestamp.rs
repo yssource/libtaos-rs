@@ -96,6 +96,6 @@ impl Display for Timestamp {
             TimestampPrecision::Milli => "%Y-%m-%d %H:%M:%S%.3f",
             _ => unreachable!("not a valid precision"),
         };
-        write!(f, "{}", self.to_naive_datetime().format(format).to_string())
+        write!(f, "{}", self.to_naive_datetime().format(format))
     }
 }
