@@ -273,7 +273,7 @@ impl CTaosResult {
                                 .unwrap_or(Field::Null)
                         }
                         _ => {
-                            unreachable!("unexpected data type, please contract the author to fix!")
+                            unreachable!("unexpected data type, please contact the author to fix!")
                         }
                     }
                 })

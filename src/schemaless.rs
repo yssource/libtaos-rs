@@ -104,7 +104,7 @@ impl Taos {
 
 #[cfg(test)]
 mod test {
-    use crate::sml::*;
+    use crate::schemaless::*;
     use crate::test::taos;
 
     #[tokio::test]
