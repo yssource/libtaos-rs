@@ -18,6 +18,7 @@ impl<F: IntoBindParam, T: IntoIterator<Item = F>> IntoParams for T {
 }
 
 pub struct Stmt {
+    taos: *mut c_void,
     stmt: *mut c_void,
 }
 
@@ -48,7 +49,23 @@ impl Stmt {
     pub fn execute(&self) -> Result<(), TaosError> {
         unsafe {
             let res = taos_stmt_execute(self.stmt);
-            self.err_or(res)
+            let res = self.err_or(res);
+
+            if let Err(TaosError { code, err }) = res {
+                if code == TaosCode::RpcFqdnError {
+                    let res = taos_query(self.taos, b"select server_version()\0" as *const u8 as _);
+                    let errno = taos_errno(res);
+                    if errno == 0 {
+                        return Ok(())
+                    } else {
+                        Err(TaosError { code, err })
+                    }
+                } else {
+                    Err(TaosError { code, err })
+                }
+            } else {
+                Ok(())
+            }
         }
     }
 
@@ -62,9 +79,6 @@ impl Stmt {
             let res = taos_stmt_add_batch(self.stmt);
             self.err_or(res)?;
         }
-        for mut param in params {
-            unsafe { param.free() };
-        }
         Ok(())
     }
 
@@ -74,7 +88,11 @@ impl Stmt {
             let res = taos_stmt_bind_param(self.stmt, params.as_ptr() as _);
             self.err_or(res)?;
             let res = taos_stmt_add_batch(self.stmt);
-            self.err_or(res)?;
+            let res = self.err_or(res);
+
+            if let Err(TaosError { code, err }) = res {
+                return self.bind_inplace(params)
+            }
         }
         Ok(())
     }
@@ -148,7 +166,7 @@ impl Taos {
         unsafe {
             let stmt = taos_stmt_init(self.as_raw());
             // let res = taos_stmt_prepare(stmt, sql.as_ptr(), 0);
-            let mut stmt = Stmt { stmt };
+            let mut stmt = Stmt { taos: self.as_raw(), stmt };
             stmt.prepare(sql)?;
             Ok(stmt)
         }
@@ -238,13 +256,18 @@ mod test {
             ty
         ))
         .await?;
+        println!("start stmt");
         let mut stmt = taos.stmt("insert into ? using stb0 tags(?) values(?,?)")?;
+        println!("set tags");
         stmt.set_tbname_tags("tb0", [&tag])?;
         assert!(stmt.is_insert());
         assert_eq!(stmt.num_params(), 2);
         let ts = Field::Timestamp(Timestamp::now());
+        println!("bind stmt");
         stmt.bind(vec![ts, Field::Null].iter())?;
-        let _ = stmt.execute()?;
+        println!("execute");
+        stmt.execute()?;
+        println!("execute stmt done");
         let res = taos.query("select n from tb0").await?;
         assert_eq!(tag, res.rows[0][0]);
         taos.exec(format!("drop database {}", db)).await?;
@@ -281,7 +304,8 @@ mod test {
     _test_tag_null!(binary, "binary(10)");
     _test_tag_null!(nchar, "nchar(10)");
     // set null in json tag is currently abort taosd. see TD-12452.
-    // _test_tag_null!(json, "json");
+    // TD-12452 is fixed by https://github.com/taosdata/TDengine/pull/9317
+    _test_tag_null!(json, "json");
     #[tokio::test]
     #[test_catalogue()]
     /// Test STMT inserting with bool values.
