@@ -42,12 +42,12 @@ impl Taos {
             }
             *n += 1;
         }
-        unsafe {
-            taos_options(
-                TSDB_OPTION_TSDB_OPTION_CHARSET,
-                "UTF-8".to_c_string().as_ptr() as _,
-            );
-        }
+        // unsafe {
+        //     taos_options(
+        //         TSDB_OPTION_TSDB_OPTION_CHARSET,
+        //         "UTF-8".to_c_string().as_ptr() as _,
+        //     );
+        // }
         unsafe {
             let conn = taos_connect(
                 ip.as_ptr(),
@@ -318,7 +318,7 @@ mod test {
         taos.exec("insert into tb2 using stb1 tags(2) values(now, 'db3');")
             .await?;
         let res = taos.query("select distinct(name) from stb1;").await?;
-        assert_eq!(res.rows[0][0], Field::Binary("db3".into()));
+        assert_eq!(res.rows[0][0], Field::Binary("db02".into()));
         taos.exec(format!("drop database {}", db)).await?;
         Ok(())
     }
@@ -341,7 +341,7 @@ mod test {
         taos.exec("insert into tb2 using stb1 tags(2) values(now, 'db3');")
             .await?;
         let res = taos.query("select distinct(name) from stb1;").await?;
-        assert_eq!(dbg!(res).rows[0][0], Field::NChar("db3".into()));
+        assert_eq!(res.rows[0][0], Field::NChar("db02".into()));
         taos.exec(format!("drop database {}", db)).await?;
         Ok(())
     }
